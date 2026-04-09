@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的工具 Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1a1d28;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.15);
+    --text: #e8eaf0;
+    --text-muted: #7c8099;
+    --text-faint: #3e4258;
+    --purple: #8b7cf8;
+    --purple-dim: rgba(139,124,248,0.12);
+    --blue: #5b9cf6;
+    --blue-dim: rgba(91,156,246,0.12);
+    --green: #4fd1a5;
+    --green-dim: rgba(79,209,165,0.1);
+    --red: #f27a7a;
+    --red-dim: rgba(242,122,122,0.1);
+    --amber: #f5c26b;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    min-height: 100vh;
+    padding: 48px 24px;
+  }
+
+  /* subtle grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* header */
+  header {
+    margin-bottom: 40px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .header-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-faint);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  header p {
+    margin-top: 6px;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  /* grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 20px;
+  }
+
+  /* card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    display: block;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .card:nth-child(2) { animation-delay: 0.08s; }
+
+  .card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-3px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  /* preview area */
+  .preview {
+    padding: 20px;
+    height: 190px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .preview-daigou {
+    background: linear-gradient(135deg, #13101e 0%, #160f2a 100%);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .preview-stock {
+    background: linear-gradient(135deg, #0d1420 0%, #0d1a2e 100%);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* glow accent */
+  .preview::after {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(50px);
+    opacity: 0.3;
+  }
+
+  .preview-daigou::after { background: var(--purple); }
+  .preview-stock::after { background: var(--blue); }
+
+  /* mini stats row */
+  .mini-stats {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .mini-stat {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+
+  .mini-stat .val {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .mini-stat .lbl {
+    font-size: 9px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* mini table */
+  .mini-tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+
+  .mini-tbl th {
+    color: var(--text-faint);
+    font-weight: 500;
+    text-align: left;
+    padding: 3px 5px;
+    font-size: 9px;
+    letter-spacing: 0.04em;
+  }
+
+  .mini-tbl td {
+    padding: 3px 5px;
+    color: var(--text-muted);
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .mini-tbl td:first-child { color: var(--text); }
+
+  /* chips */
+  .chip {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 20px;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+
+  .chip-green { background: var(--green-dim); color: var(--green); }
+  .chip-red   { background: var(--red-dim);   color: var(--red); }
+  .chip-gray  { background: rgba(255,255,255,0.05); color: var(--text-muted); }
+
+  /* mini bar chart */
+  .mini-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 28px;
+    margin-top: auto;
+  }
+
+  .mini-bar {
+    flex: 1;
+    border-radius: 2px 2px 0 0;
+    opacity: 0.7;
+  }
+
+  /* card body */
+  .card-body {
+    padding: 18px 20px;
+  }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .icon-box-purple { background: var(--purple-dim); }
+  .icon-box-blue   { background: var(--blue-dim); }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  .card-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .tags {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--text-faint);
+  }
+
+  .open-btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-hover);
+    background: rgba(255,255,255,0.04);
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .open-btn:hover {
+    background: rgba(255,255,255,0.09);
+    border-color: rgba(255,255,255,0.25);
+  }
+
+  /* accent line top of card on hover */
+  .card { position: relative; }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 2;
+  }
+
+  .card-purple::before { background: linear-gradient(90deg, transparent, var(--purple), transparent); }
+  .card-blue::before   { background: linear-gradient(90deg, transparent, var(--blue), transparent); }
+
+  .card:hover::before { opacity: 1; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-label">// my tools</div>
+    <h1>工具 Dashboard</h1>
+    <p>快速存取與預覽，點擊卡片開啟工具</p>
+  </header>
+
+  <div class="grid">
+
+    <!-- 代購管理 -->
+    <a class="card card-purple" href="https://actoct-sketch.github.io/daigou-dashboard/" target="_blank">
+      <div class="preview preview-daigou">
+        <div class="mini-stats">
+          <div class="mini-stat">
+            <div class="val" style="color:var(--purple)">12</div>
+            <div class="lbl">在庫商品</div>
+          </div>
+          <div class="mini-stat">
+            <div class="val" style="color:var(--green)">NT$4,200</div>
+            <div class="lbl">本月利潤</div>
+          </div>
+          <div class="mini-stat">
+            <div class="val" style="color:var(--text)">8</div>
+            <div class="lbl">已售出</div>
+          </div>
+        </div>
+        <table class="mini-tbl">
+          <tr><th>品名</th><th>成本</th><th>狀態</th><th>持有人</th></tr>
+          <tr><td>Nike Air Max</td><td>$2,100</td><td><span class="chip chip-gray">在庫</span></td><td>Alice</td></tr>
+          <tr><td>Levi's 牛仔褲</td><td>$1,800</td><td><span class="chip chip-green">已售</span></td><td>Bob</td></tr>
+          <tr><td>NB 530</td><td>$3,200</td><td><span class="chip chip-gray">在庫</span></td><td>Alice</td></tr>
+        </table>
+        <div class="mini-bars">
+          <div class="mini-bar" style="height:40%;background:var(--purple)"></div>
+          <div class="mini-bar" style="height:55%;background:var(--purple)"></div>
+          <div class="mini-bar" style="height:70%;background:var(--purple)"></div>
+          <div class="mini-bar" style="height:60%;background:var(--purple)"></div>
+          <div class="mini-bar" style="height:90%;background:var(--purple)"></div>
+          <div class="mini-bar" style="height:75%;background:var(--purple)"></div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="icon-box icon-box-purple">🛍️</div>
+          <div class="card-title">代購管理系統</div>
+        </div>
+        <div class="card-desc">庫存管理、已售出分析、利潤計算，串接 Google Sheets 同步資料。</div>
+        <div class="card-footer">
+          <div class="tags">
+            <span class="tag">庫存</span>
+            <span class="tag">利潤分析</span>
+            <span class="tag">Google Sheets</span>
+          </div>
+          <button class="open-btn">開啟 ↗</button>
+        </div>
+      </div>
+    </a>
+
+    <!-- 台股記帳 -->
+    <a class="card card-blue" href="https://actoct-sketch.github.io/stock-tracker/" target="_blank">
+      <div class="preview preview-stock">
+        <div class="mini-stats">
+          <div class="mini-stat">
+            <div class="val" style="color:var(--blue)">$120,500</div>
+            <div class="lbl">總市值</div>
+          </div>
+          <div class="mini-stat">
+            <div class="val" style="color:var(--green)">+5.2%</div>
+            <div class="lbl">總報酬率</div>
+          </div>
+          <div class="mini-stat">
+            <div class="val" style="color:var(--amber)">$3,800</div>
+            <div class="lbl">股利收入</div>
+          </div>
+        </div>
+        <table class="mini-tbl">
+          <tr><th>股票</th><th>股數</th><th>報酬率</th><th>市值</th></tr>
+          <tr><td>2330 台積電</td><td>200</td><td><span class="chip chip-green">+8.3%</span></td><td>$48,000</td></tr>
+          <tr><td>0050 元大50</td><td>500</td><td><span class="chip chip-green">+3.1%</span></td><td>$36,000</td></tr>
+          <tr><td>2881 富邦金</td><td>300</td><td><span class="chip chip-red">−1.2%</span></td><td>$18,000</td></tr>
+        </table>
+        <div class="mini-bars">
+          <div class="mini-bar" style="height:80%;background:var(--blue);flex:2"></div>
+          <div class="mini-bar" style="height:60%;background:var(--blue);flex:1.5"></div>
+          <div class="mini-bar" style="height:40%;background:var(--blue);flex:1"></div>
+          <div class="mini-bar" style="height:25%;background:var(--blue);flex:0.8"></div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="icon-box icon-box-blue">📈</div>
+          <div class="card-title">台股記帳</div>
+        </div>
+        <div class="card-desc">買賣交易記錄、持倉損益追蹤、股利管理，支援存提款與股利預估。</div>
+        <div class="card-footer">
+          <div class="tags">
+            <span class="tag">持倉追蹤</span>
+            <span class="tag">股利</span>
+            <span class="tag">損益分析</span>
+          </div>
+          <button class="open-btn">開啟 ↗</button>
+        </div>
+      </div>
+    </a>
+
+  </div>
+</div>
+
+</body>
+</html>
